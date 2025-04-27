@@ -1,7 +1,7 @@
 [![](https://jitpack.io/v/ZYX520YTT/RootPush.svg)](https://jitpack.io/#ZYX520YTT/RootPush)
 
 ### RootPush
- RootPush是一个包含apk打包上传到fir平台，然后通过钉钉机器人自动发布应用的插件
+ RootPush是一个包含apk打包上传到fir平台或者蒲公英平台，然后通过钉钉机器人自动发布应用的插件
  
  
  **添加依赖**
@@ -50,6 +50,7 @@ uploadInfo {
     appName="***"
     firAppName="***"
     platform="***"
+    pgyApiKey="***"
 }
 
 ```
@@ -106,7 +107,14 @@ app的logo,在AndroidStudio内的地址，例如：appIconPath=project.projectDi
 在钉钉群聊里面找到机器人，查看机器人设置，找到WebHook地址，地址中的access_token即为robotToken
 ```
 
+- pgyApiKey
+```
+蒲公英 API Key，用来识别API调用者的身份。位置在蒲公英网站中：
+```
+  [pgyApiKey.png](https://github.com/ZYX520YTT/RootPush/blob/main/picture/pgyApiKey.png)
+
 3.最后在点击Tasks中的assembleReleaseFir就可以通知钉钉机器人了
    ![palypackage.png](https://github.com/ZYX520YTT/RootPush/blob/main/picture/palypackage.png)
    ![success.png](https://github.com/ZYX520YTT/RootPush/blob/main/picture/success.png)
 ### 注意:请在机器人设置的安全设置里添加关键词，这里是appName
+### PS:升级到1.1.8，uploadInfo中的每个参数都需要填，没用的就填空，否则可能会报错
