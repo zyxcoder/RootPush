@@ -60,12 +60,15 @@ class PluginImpl implements Plugin<Project> {
         Response response = okHttpUtil.pgyUploadApk(pgyTokenBean.data.endpoint, pgyTokenBean.data.key, pgyTokenBean.data.params.signature, pgyTokenBean.data.params.token, apkFile)
 
         if (response.code() == 204) {
-            PeriodicTask task = new PeriodicTask(3)
-            task.start {
-                PgyUploadResultInfo pgyUploadResultInfo = okHttpUtil.queryUpLoadPgyMessage(info.pgyApiKey, pgyTokenBean.data.key)
-                if (pgyUploadResultInfo.code == 0 && pgyUploadResultInfo.data != null) {
 
-                    task.stop()
+            boolean isFihishTask = false
+
+            //代表任务没完成，继续执行任务
+            while (!isFihishTask) {
+                PgyUploadResultInfo pgyUploadResultInfo = okHttpUtil.queryUpLoadPgyMessage(info.pgyApiKey, pgyTokenBean.data.key)
+
+                if (pgyUploadResultInfo.code == 0 && pgyUploadResultInfo.data != null) {
+                    println(ANSI_GREEN + "apk上传到蒲公英结果:发布成功" + ANSI_RESET)
                     //获取apk的下载信息
                     String buildShortcutUrl = pgyUploadResultInfo.data.buildShortcutUrl
                     String buildQRCodeURL = pgyUploadResultInfo.data.buildQRCodeURL
@@ -76,16 +79,7 @@ class PluginImpl implements Plugin<Project> {
                     for (String phone : needAtPeopleMobiles) {
                         atPeopleContent.append("@" + phone)
                     }
-                    String content = "### " + info.appName + "最新版已打包发布\n" +
-                            "\n" +
-                            "* ${info.changeLog}\n" +
-                            "* v${project.android.defaultConfig.versionName}\n" +
-                            "* ${info.appTestVersionCodeText}\n" +
-                            "\n" +
-                            "[查看下载二维码]($buildQRCodeURL)\n" +
-                            "\n" +
-                            "[在蒲公英中查看]( https://www.pgyer.com/" + buildShortcutUrl + ")\n" +
-                            getAtPeopleContent(atPeopleContent.toString()) + "\n"
+                    String content = "### " + info.appName + "最新版已打包发布\n" + "\n" + "* ${info.changeLog}\n" + "* v${project.android.defaultConfig.versionName}\n" + "* ${info.appTestVersionCodeText}\n" + "\n" + "[查看下载二维码]($buildQRCodeURL)\n" + "\n" + "[在蒲公英中查看]( https://www.pgyer.com/" + buildShortcutUrl + ")\n" + getAtPeopleContent(atPeopleContent.toString()) + "\n"
                     switch (info.platform) {
                         case "weixin":
                             String sendWexinResult = okHttpUtil.sendWeiXinMessageToTalk(new WeiXinTalkBean("markdown",
@@ -95,24 +89,35 @@ class PluginImpl implements Plugin<Project> {
                             break
                         case "dingding":
                             String sendDingDingResult = okHttpUtil.sendDingMessageToTalk(new DingTalkBean("markdown",
-                                    new DingTalkBean.MarkDownContent(info.appName + "新版本提示", "![screenshot](${uploadIconResult.getUrl.substring(0, uploadIconResult.getUrl.indexOf("?"))})\n" + content),
+                                    new DingTalkBean.MarkDownContent(info.appName + "新版本提示", "![screenshot](${getIconUrl(pgyUploadResultInfo.data.buildIcon)})\n" + content),
                                     new DingTalkBean.AtPeople(needAtPeopleMobiles, false)), info.robotToken)
                             println(ANSI_GREEN + "发送到钉钉的结果:$sendDingDingResult" + ANSI_RESET)
                             break
                         default:
                             String sendDingDingResult = okHttpUtil.sendDingMessageToTalk(new DingTalkBean("markdown",
-                                    new DingTalkBean.MarkDownContent(info.appName + "新版本提示", "![screenshot](${uploadIconResult.getUrl.substring(0, uploadIconResult.getUrl.indexOf("?"))})\n" + content),
+                                    new DingTalkBean.MarkDownContent(info.appName + "新版本提示", "![screenshot](${getIconUrl(pgyUploadResultInfo.data.buildIcon)})\n" + content),
                                     new DingTalkBean.AtPeople(needAtPeopleMobiles, false)), info.robotToken)
                             println(ANSI_GREEN + "发送到钉钉的结果:$sendDingDingResult" + ANSI_RESET)
                             break
                     }
+                    isFihishTask = true
                 } else {
                     println(ANSI_GREEN + "apk上传到蒲公英结果:${pgyUploadResultInfo.message}" + ANSI_RESET)
                 }
+                //每3秒执行一次查询任务，所有这里的睡眠是3秒
+                Thread.sleep(3000)
             }
         } else {
             println(ANSI_GREEN + "apk上传到蒲公英结果:${response.body().toString()}" + ANSI_RESET)
         }
+    }
+
+    private static String getIconUrl(String buildIcon) {
+        if (buildIcon?.length() >= 5) {
+            String buildIconPath = buildIcon.substring(0, 5).collect { it }.join("/")
+            return "https://cdn-app-icon2.pgyer.com/${buildIconPath}/${buildIcon}?x-oss-process=image/resize,m_lfit,h_120,w_120/format,jpg"
+        }
+        return null // 或者抛出异常，如果 buildIcon 不符合预期
     }
     //打包完毕,走发布流程
     private static void doPublishFir(Project project) {
@@ -163,19 +168,7 @@ class PluginImpl implements Plugin<Project> {
         for (String phone : needAtPeopleMobiles) {
             atPeopleContent.append("@" + phone)
         }
-        String content = "### " + info.appName + "最新版已打包发布\n" +
-                "\n" +
-                "* ${info.changeLog}\n" +
-                "* v${project.android.defaultConfig.versionName}\n" +
-                "* ${info.appTestVersionCodeText}\n" +
-                "\n" +
-                "[直接下载]($downloadUrl)\n" +
-                "\n" +
-                "[查看下载二维码](https://api.pwmqr.com/qrcode/create/?url=$downloadUrl)\n" +
-                "\n" +
-                "[在Fir中查看]( http://hey.scandown.com/" + info.firAppName + ")\n" +
-                getAtPeopleContent(atPeopleContent.toString()) +
-                "\n"
+        String content = "### " + info.appName + "最新版已打包发布\n" + "\n" + "* ${info.changeLog}\n" + "* v${project.android.defaultConfig.versionName}\n" + "* ${info.appTestVersionCodeText}\n" + "\n" + "[直接下载]($downloadUrl)\n" + "\n" + "[查看下载二维码](https://api.pwmqr.com/qrcode/create/?url=$downloadUrl)\n" + "\n" + "[在Fir中查看]( http://hey.scandown.com/" + info.firAppName + ")\n" + getAtPeopleContent(atPeopleContent.toString()) + "\n"
         switch (info.platform) {
             case "weixin":
                 String sendWexinResult = okHttpUtil.sendWeiXinMessageToTalk(new WeiXinTalkBean("markdown",

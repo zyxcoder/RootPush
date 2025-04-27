@@ -27,6 +27,7 @@ class PgyUploadResultInfo {
     static class Data {
         String buildShortcutUrl
         String buildQRCodeURL
+        String buildIcon
 
         String getBuildShortcutUrl() {
             return buildShortcutUrl
@@ -36,9 +37,14 @@ class PgyUploadResultInfo {
             return buildQRCodeURL
         }
 
-        Data(String buildShortcutUrl, String buildQRCodeURL) {
+        String getBuildIcon() {
+            return buildIcon
+        }
+
+        Data(String buildShortcutUrl, String buildQRCodeURL, String buildIcon) {
             this.buildShortcutUrl = buildShortcutUrl
             this.buildQRCodeURL = buildQRCodeURL
+            this.buildIcon = buildIcon
         }
     }
 }
