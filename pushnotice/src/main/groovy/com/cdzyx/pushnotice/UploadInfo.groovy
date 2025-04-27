@@ -13,6 +13,7 @@ class UploadInfo {
     String appIconPath
     String firAppName
     String platform
+    String pgyApiKey
 
 
     @Override
@@ -29,6 +30,7 @@ class UploadInfo {
                 ", appIconPath='" + appIconPath + '\'' +
                 ", firAppName='" + firAppName + '\'' +
                 ", platform='" + platform + '\'' +
+                ", pgyApiKey='" + pgyApiKey + '\'' +
                 '}'
     }
 }

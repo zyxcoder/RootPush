@@ -1,5 +1,6 @@
 package com.cdzyx.pushnotice
 
+import okhttp3.Response
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -16,16 +17,105 @@ class PluginImpl implements Plugin<Project> {
         if (project.android.hasProperty("applicationVariants")) {
             project.afterEvaluate {
                 project.android.applicationVariants.all { variant ->
+
+                    //上传到Fir平台
                     Task uploadFir = project.task("assemble${variant.name.capitalize()}Fir").doLast {
-                        doPublish(project)
+                        doPublishFir(project)
                     }
                     uploadFir.dependsOn("assemble${variant.name.capitalize()}")
+
+                    //上传到蒲公英平台
+                    Task uploadPgy = project.task("assemble${variant.name.capitalize()}Pgy").doLast {
+                        doPublishPgy(project)
+                    }
+                    uploadPgy.dependsOn("assemble${variant.name.capitalize()}")
                 }
             }
         }
     }
     //打包完毕,走发布流程
-    private static void doPublish(Project project) {
+    private static void doPublishPgy(Project project) {
+        UploadInfo info = project.uploadInfo
+        if (!info.needUpload) {
+            return
+        }
+        OkHttpUtil okHttpUtil = new OkHttpUtil()
+        //获取上传的token
+        PgyTokenBean pgyTokenBean = okHttpUtil.getPgyToken(info.pgyApiKey)
+        //上传APK文件
+        println(ANSI_RED + "开始上传APK到蒲公英平台..." + ANSI_RESET)
+        File[] uploadFile = new File("${project.buildDir}/outputs/upload").listFiles()
+        File apkFile
+        for (File file : uploadFile) {
+            if (file.name.endsWith("apk")) {
+                apkFile = file
+                break
+            }
+        }
+        if (apkFile == null) {
+            println(ANSI_GREEN + "apk文件不存在" + ANSI_RESET)
+        }
+
+
+        Response response = okHttpUtil.pgyUploadApk(pgyTokenBean.data.endpoint, pgyTokenBean.data.key, pgyTokenBean.data.params.signature, pgyTokenBean.data.params.token, apkFile)
+
+        if (response.code() == 204) {
+            PeriodicTask task = new PeriodicTask(3)
+            task.start {
+                PgyUploadResultInfo pgyUploadResultInfo = okHttpUtil.queryUpLoadPgyMessage(info.pgyApiKey, pgyTokenBean.data.key)
+                if (pgyUploadResultInfo.code == 0 && pgyUploadResultInfo.data != null) {
+
+                    task.stop()
+                    //获取apk的下载信息
+                    String buildShortcutUrl = pgyUploadResultInfo.data.buildShortcutUrl
+                    String buildQRCodeURL = pgyUploadResultInfo.data.buildQRCodeURL
+
+                    List<String> needAtPeopleMobiles = new ArrayList<>()
+                    needAtPeopleMobiles.addAll(info.needAtPeopleMobiles.split(","))
+                    StringBuilder atPeopleContent = new StringBuilder()
+                    for (String phone : needAtPeopleMobiles) {
+                        atPeopleContent.append("@" + phone)
+                    }
+                    String content = "### " + info.appName + "最新版已打包发布\n" +
+                            "\n" +
+                            "* ${info.changeLog}\n" +
+                            "* v${project.android.defaultConfig.versionName}\n" +
+                            "* ${info.appTestVersionCodeText}\n" +
+                            "\n" +
+                            "[查看下载二维码]($buildQRCodeURL)\n" +
+                            "\n" +
+                            "[在蒲公英中查看]( https://www.pgyer.com/" + buildShortcutUrl + ")\n" +
+                            getAtPeopleContent(atPeopleContent.toString()) + "\n"
+                    switch (info.platform) {
+                        case "weixin":
+                            String sendWexinResult = okHttpUtil.sendWeiXinMessageToTalk(new WeiXinTalkBean("markdown",
+                                    new WeiXinTalkBean.MarkDownContent(content),
+                                    new WeiXinTalkBean.AtPeople(needAtPeopleMobiles, false)), info.robotToken)
+                            println(ANSI_GREEN + "发送到微信的结果:$sendWexinResult" + ANSI_RESET)
+                            break
+                        case "dingding":
+                            String sendDingDingResult = okHttpUtil.sendDingMessageToTalk(new DingTalkBean("markdown",
+                                    new DingTalkBean.MarkDownContent(info.appName + "新版本提示", "![screenshot](${uploadIconResult.getUrl.substring(0, uploadIconResult.getUrl.indexOf("?"))})\n" + content),
+                                    new DingTalkBean.AtPeople(needAtPeopleMobiles, false)), info.robotToken)
+                            println(ANSI_GREEN + "发送到钉钉的结果:$sendDingDingResult" + ANSI_RESET)
+                            break
+                        default:
+                            String sendDingDingResult = okHttpUtil.sendDingMessageToTalk(new DingTalkBean("markdown",
+                                    new DingTalkBean.MarkDownContent(info.appName + "新版本提示", "![screenshot](${uploadIconResult.getUrl.substring(0, uploadIconResult.getUrl.indexOf("?"))})\n" + content),
+                                    new DingTalkBean.AtPeople(needAtPeopleMobiles, false)), info.robotToken)
+                            println(ANSI_GREEN + "发送到钉钉的结果:$sendDingDingResult" + ANSI_RESET)
+                            break
+                    }
+                } else {
+                    println(ANSI_GREEN + "apk上传到蒲公英结果:${pgyUploadResultInfo.message}" + ANSI_RESET)
+                }
+            }
+        } else {
+            println(ANSI_GREEN + "apk上传到蒲公英结果:${response.body().toString()}" + ANSI_RESET)
+        }
+    }
+    //打包完毕,走发布流程
+    private static void doPublishFir(Project project) {
         UploadInfo info = project.uploadInfo
         if (!info.needUpload) {
             return
@@ -48,22 +138,19 @@ class PluginImpl implements Plugin<Project> {
             println(ANSI_GREEN + "apk文件不存在" + ANSI_RESET)
         }
         //获取配置信息
-        String uploadFileResult = okHttpUtil.uploadApk(
-                apkFile,
+        String uploadFileResult = okHttpUtil.uploadApk(apkFile,
                 fileUploadCert.getUploadKey(),
                 fileUploadCert.getUploadToken(),
                 project.android.defaultConfig.versionName,
                 project.android.defaultConfig.versionCode,
                 fileUploadCert.getUploadUrlAddress(),
                 info.changeLog,
-                info.firAppName
-        )
+                info.firAppName)
         println(ANSI_GREEN + "apk上传fir结果:$uploadFileResult" + ANSI_RESET)
         //上传logo
         println(ANSI_RED + "开始上传LOGO到fir..." + ANSI_RESET)
         AppInFirInfo.Cert.Upload iconUploadCert = apkInFirInfo.cert.icon
-        UploadResultInfo uploadIconResult = okHttpUtil.uploadIcon(
-                new File(info.appIconPath),
+        UploadResultInfo uploadIconResult = okHttpUtil.uploadIcon(new File(info.appIconPath),
                 iconUploadCert.getUploadKey(),
                 iconUploadCert.getUploadToken(),
                 iconUploadCert.getUploadUrlAddress())
@@ -91,27 +178,21 @@ class PluginImpl implements Plugin<Project> {
                 "\n"
         switch (info.platform) {
             case "weixin":
-                String sendWexinResult = okHttpUtil.sendWeiXinMessageToTalk(new WeiXinTalkBean(
-                        "markdown",
+                String sendWexinResult = okHttpUtil.sendWeiXinMessageToTalk(new WeiXinTalkBean("markdown",
                         new WeiXinTalkBean.MarkDownContent(content),
-                        new WeiXinTalkBean.AtPeople(needAtPeopleMobiles, false)
-                ), info.robotToken)
+                        new WeiXinTalkBean.AtPeople(needAtPeopleMobiles, false)), info.robotToken)
                 println(ANSI_GREEN + "发送到微信的结果:$sendWexinResult" + ANSI_RESET)
                 break
             case "dingding":
-                String sendDingDingResult = okHttpUtil.sendDingMessageToTalk(new DingTalkBean(
-                        "markdown",
+                String sendDingDingResult = okHttpUtil.sendDingMessageToTalk(new DingTalkBean("markdown",
                         new DingTalkBean.MarkDownContent(info.appName + "新版本提示", "![screenshot](${uploadIconResult.getUrl.substring(0, uploadIconResult.getUrl.indexOf("?"))})\n" + content),
-                        new DingTalkBean.AtPeople(needAtPeopleMobiles, false)
-                ), info.robotToken)
+                        new DingTalkBean.AtPeople(needAtPeopleMobiles, false)), info.robotToken)
                 println(ANSI_GREEN + "发送到钉钉的结果:$sendDingDingResult" + ANSI_RESET)
                 break
             default:
-                String sendDingDingResult = okHttpUtil.sendDingMessageToTalk(new DingTalkBean(
-                        "markdown",
+                String sendDingDingResult = okHttpUtil.sendDingMessageToTalk(new DingTalkBean("markdown",
                         new DingTalkBean.MarkDownContent(info.appName + "新版本提示", "![screenshot](${uploadIconResult.getUrl.substring(0, uploadIconResult.getUrl.indexOf("?"))})\n" + content),
-                        new DingTalkBean.AtPeople(needAtPeopleMobiles, false)
-                ), info.robotToken)
+                        new DingTalkBean.AtPeople(needAtPeopleMobiles, false)), info.robotToken)
                 println(ANSI_GREEN + "发送到钉钉的结果:$sendDingDingResult" + ANSI_RESET)
                 break
         }
