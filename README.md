@@ -111,7 +111,7 @@ app的logo,在AndroidStudio内的地址，例如：appIconPath=project.projectDi
 ```
 蒲公英 API Key，用来识别API调用者的身份。位置在蒲公英网站中：
 ```
-  ![pgyApiKey.png](https://github.com/ZYX520YTT/RootPush/blob/main/picture/pgyApiKey.png)
+  ![pgyApiKey.png](https://github.com/zyxcoder/RootPush/blob/pgy/picture/pgyApiKey.png)
 
 3.最后在点击Tasks中的assembleReleaseFir就可以通知钉钉机器人了
    ![palypackage.png](https://github.com/ZYX520YTT/RootPush/blob/main/picture/palypackage.png)
