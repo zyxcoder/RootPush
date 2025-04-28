@@ -88,7 +88,7 @@ class PluginImpl implements Plugin<Project> {
                             "* v${project.android.defaultConfig.versionName}\n" +
                             "* ${info.appTestVersionCodeText}\n" +
                             "\n" +
-                            "[查看下载二维码(只能查看最新APP)]($buildQRCodeURL)\n" +
+                            "[查看下载二维码(查看该打包版本)]($buildQRCodeURL)\n" +
                             "\n" +
                             "[在蒲公英中查看(查看该打包版本)]( https://www.pgyer.com/" + pgyUploadResultInfo.data.buildKey + ")\n" +
                             getAtPeopleContent(atPeopleContent.toString()) + "\n"

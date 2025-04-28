@@ -117,4 +117,4 @@ app的logo,在AndroidStudio内的地址，例如：appIconPath=project.projectDi
    ![palypackage.png](https://github.com/ZYX520YTT/RootPush/blob/main/picture/palypackage.png)
    ![success.png](https://github.com/ZYX520YTT/RootPush/blob/main/picture/success.png)
 ### 注意:请在机器人设置的安全设置里添加关键词，这里是appName
-### PS:升级到1.1.8，uploadInfo中的每个参数都需要填，没用的就填空，否则可能会报错
+### PS:升级到1.1.8+，uploadInfo中的每个参数都需要填，没用的就填空，否则可能会报错
