@@ -41,7 +41,7 @@ class PluginImpl implements Plugin<Project> {
         }
         OkHttpUtil okHttpUtil = new OkHttpUtil()
         //获取上传的token
-        PgyTokenBean pgyTokenBean = okHttpUtil.getPgyToken(info.pgyApiKey)
+        PgyTokenBean pgyTokenBean = okHttpUtil.getPgyToken(info.pgyApiKey,info.changeLog)
         //上传APK文件
         println(ANSI_RED + "开始上传APK到蒲公英平台..." + ANSI_RESET)
         File[] uploadFile = new File("${project.buildDir}/outputs/upload").listFiles()
@@ -68,7 +68,8 @@ class PluginImpl implements Plugin<Project> {
                 PgyUploadResultInfo pgyUploadResultInfo = okHttpUtil.queryUpLoadPgyMessage(info.pgyApiKey, pgyTokenBean.data.key)
 
                 if (pgyUploadResultInfo.code == 0 && pgyUploadResultInfo.data != null) {
-                    println(ANSI_GREEN + "apk上传到蒲公英结果:发布成功" + ANSI_RESET)
+
+                    println(ANSI_GREEN + "apk上传到蒲公英结果:发布成功,  buildKey:$pgyUploadResultInfo.data.buildKey" + ANSI_RESET)
                     //获取apk的下载信息
                     String buildShortcutUrl = pgyUploadResultInfo.data.buildShortcutUrl
                     String buildQRCodeURL = pgyUploadResultInfo.data.buildQRCodeURL
@@ -79,7 +80,18 @@ class PluginImpl implements Plugin<Project> {
                     for (String phone : needAtPeopleMobiles) {
                         atPeopleContent.append("@" + phone)
                     }
-                    String content = "### " + info.appName + "最新版已打包发布\n" + "\n" + "* ${info.changeLog}\n" + "* v${project.android.defaultConfig.versionName}\n" + "* ${info.appTestVersionCodeText}\n" + "\n" + "[查看下载二维码]($buildQRCodeURL)\n" + "\n" + "[在蒲公英中查看]( https://www.pgyer.com/" + buildShortcutUrl + ")\n" + getAtPeopleContent(atPeopleContent.toString()) + "\n"
+                    String content = "### " +
+                            info.appName +
+                            "最新版已打包发布\n" +
+                            "\n" +
+                            "* ${info.changeLog}\n" +
+                            "* v${project.android.defaultConfig.versionName}\n" +
+                            "* ${info.appTestVersionCodeText}\n" +
+                            "\n" +
+                            "[查看下载二维码(只能查看最新APP)]($buildQRCodeURL)\n" +
+                            "\n" +
+                            "[在蒲公英中查看(查看该打包版本)]( https://www.pgyer.com/" + pgyUploadResultInfo.data.buildKey + ")\n" +
+                            getAtPeopleContent(atPeopleContent.toString()) + "\n"
                     switch (info.platform) {
                         case "weixin":
                             String sendWexinResult = okHttpUtil.sendWeiXinMessageToTalk(new WeiXinTalkBean("markdown",

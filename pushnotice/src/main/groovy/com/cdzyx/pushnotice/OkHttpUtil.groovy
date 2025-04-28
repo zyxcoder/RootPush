@@ -34,12 +34,14 @@ class OkHttpUtil {
     /**
      * 获取蒲公英平台上传的 token
      * @param apiKey
+     * @param buildUpdateDescription
      * @return
      */
-    PgyTokenBean getPgyToken(String apiKey) {
+    PgyTokenBean getPgyToken(String apiKey,String buildUpdateDescription) {
         FormBody.Builder build = new FormBody.Builder()
         build.add("_api_key", apiKey)
         build.add("buildType", "android")
+        build.add("buildUpdateDescription",buildUpdateDescription)
         Request request = new Request.Builder().url("https://api.pgyer.com/apiv2/app/getCOSToken").post(build.build()).build()
         Response response = okHttpClient.newCall(request).execute()
         String result = response.body.string()
