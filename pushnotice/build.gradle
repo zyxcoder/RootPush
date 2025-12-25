@@ -1,23 +1,6 @@
-plugins {
-    id 'groovy'
-    id 'com.github.dcendents.android-maven'
-}
-dependencies {
-    //gradle sdk
-    implementation gradleApi()
-    //groovy sdk
-    implementation localGroovy()
-    implementation 'com.squareup.okhttp3:okhttp:4.7.2'
-    implementation 'com.google.code.gson:gson:2.8.6'
-}
-repositories {
-    mavenCentral()
-    google()
-    jcenter()
-}
 //plugins {
 //    id 'groovy'
-//    id 'maven'
+//    id 'com.github.dcendents.android-maven'
 //}
 //dependencies {
 //    //gradle sdk
@@ -32,19 +15,36 @@ repositories {
 //    google()
 //    jcenter()
 //}
-//
-//def groupName = 'com.cdzyx.pushnotice'//组名
-//def artifactName = 'RootPush'//项目名
-//def versionName = '1.0.0'//版本号
-//
-////上传至本地仓库
-//uploadArchives {
-//    repositories {
-//        mavenDeployer {
-//            pom.groupId = "${groupName}"
-//            pom.artifactId = "${artifactName}"
-//            pom.version = "${versionName}"
-//            repository(url: uri('../PluginRepository'))
-//        }
-//    }
-//}
+plugins {
+    id 'groovy'
+    id 'maven'
+}
+dependencies {
+    //gradle sdk
+    implementation gradleApi()
+    //groovy sdk
+    implementation localGroovy()
+    implementation 'com.squareup.okhttp3:okhttp:4.7.2'
+    implementation 'com.google.code.gson:gson:2.8.6'
+}
+repositories {
+    mavenCentral()
+    google()
+    jcenter()
+}
+
+def groupName = 'com.cdzyx.pushnotice'//组名
+def artifactName = 'RootPush'//项目名
+def versionName = '1.0.3'//版本号
+
+//上传至本地仓库
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            pom.groupId = "${groupName}"
+            pom.artifactId = "${artifactName}"
+            pom.version = "${versionName}"
+            repository(url: uri('../PluginRepository'))
+        }
+    }
+}

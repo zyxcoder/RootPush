@@ -1,14 +1,14 @@
 //测试本地仓库中的插件
-//buildscript {
-//    repositories {
-//        maven {
-//            url uri('../PluginRepository')
-//        }
-//    }
-//    dependencies {
-//        classpath 'com.cdzyx.pushnotice:RootPush:1.0.0'
-//    }
-//}
+buildscript {
+    repositories {
+        maven {
+            url uri('../PluginRepository')
+        }
+    }
+    dependencies {
+        classpath 'com.cdzyx.pushnotice:RootPush:1.0.3'
+    }
+}
 plugins {
     id 'com.android.application'
     id 'kotlin-android'
@@ -84,22 +84,22 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 }
-//
-//apply plugin: 'com.cdzyx.pushnotice'//使用自定义的插件
-//
-//uploadInfo {
-//    needUpload = true
-//    needAtPeopleMobiles = "张宇翔"
-//    changeLog = "测试钉钉机器人(请勿下载)"
-//    appTestVersionCodeText = "测试版本:test01"
-//
-//    //下面不用改
-//    apiToken = "293457325da4b6363ecec48593d45fc4"
-//    packageName = "com.tms.logistics"
-//    robotToken = "82249f9cb272edcb47e8ac81a18a6e40db323175cfd24e61a7581c6e81bb8334"
-//    appIconPath = project.projectDir.path + "/src/main/res/mipmap-xxhdpi/ic_launcher.png"
-//    appName = "testpush"
-//    firAppName = "RootPush"
-//    platform = "dingding"
-//    pgyApiKey="5019548c960ef9b00f6f9eb7b1062c89"
-//}
+
+apply plugin: 'com.cdzyx.pushnotice'//使用自定义的插件
+
+uploadInfo {
+    needUpload = true
+    needAtPeopleMobiles = "张宇翔"
+    changeLog = "第4个"
+    appTestVersionCodeText = "测试版本:test01"
+
+    //下面不用改
+    apiToken = "293457325da4b6363ecec48593d45fc4"
+    packageName = "com.tms.logistics"
+    robotToken = "82249f9cb272edcb47e8ac81a18a6e40db323175cfd24e61a7581c6e81bb8334"
+    appIconPath = project.projectDir.path + "/src/main/res/mipmap-xxhdpi/ic_launcher.png"
+    appName = "testpush"
+    firAppName = "RootPush"
+    platform = "dingding"
+    pgyApiKey="5019548c960ef9b00f6f9eb7b1062c89"
+}
